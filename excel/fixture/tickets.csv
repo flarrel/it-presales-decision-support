@@ -1,0 +1,7 @@
+ticket_id,opened_at,resolved_at,queue,priority,sla_minutes,handling_minutes,week,sla_breach
+EX-001,2025-01-06T09:00:00,2025-01-06T09:20:00,Network,normal,60,20,2025-01-06,0
+EX-002,2025-01-06T09:05:00,2025-01-06T10:35:00,Network,normal,60,35,2025-01-06,1
+EX-003,2025-01-07T09:00:00,,Network,normal,60,,2025-01-06,
+EX-004,2025-01-07T09:00:00.150000,2025-01-07T09:30:00.150000,Identity,normal,30,30,2025-01-06,0
+EX-005,2025-01-13T09:00:00,2025-01-13T10:00:00.000001,Network,normal,60,45,2025-01-13,1
+EX-006,2025-01-13T10:00:00,2025-01-13T10:55:00,Identity,normal,30,55,2025-01-13,1
