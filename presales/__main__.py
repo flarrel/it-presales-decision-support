@@ -2,6 +2,7 @@
 
 import argparse
 import csv
+from contextlib import closing
 from datetime import date
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
@@ -59,6 +60,11 @@ def scenario_plans(weekly, predictions, settings):
     if not queues:
         return []
     if settings is not None:
+        names = [item.get("name") for item in settings]
+        if any(not isinstance(name, str) or not name.strip() for name in names):
+            raise ValueError("Each staffing scenario must have a name")
+        if len(names) != len(set(names)):
+            raise ValueError("Staffing scenario names must be unique")
         for item in settings:
             for key in ("baseline_hours", "minutes_per_ticket", "max_extra_hours"):
                 if set(item[key]) != set(queues):
@@ -122,21 +128,26 @@ def publish_reporting_tables(connection, weekly, staffing, sensitivity):
         )
 
 
-def run_sensitivity(output, staffing, rscript):
+def run_sensitivity(output, staffing, weekly, rscript):
     if not staffing:
         return [], "No forecast-based staffing rows are available"
+    if not any(row["total_handling_minutes"] for row in weekly):
+        return [], "No resolved-ticket handling times are available"
     local_r = ROOT / "runtime" / "r" / "bin" / "Rscript"
-    executable = rscript or shutil.which("Rscript")
+    executable = str(Path(rscript).expanduser().resolve()) if rscript else shutil.which("Rscript")
     if not executable and local_r.is_file():
         executable = str(local_r)
     if not executable:
         raise ValueError("Rscript was not found. Set --rscript to the Rscript executable.")
 
+    output = output.resolve()
+    # R rejects spaces in TMPDIR. Keep a relative temp path inside the project.
+    (ROOT / "runtime" / "tmp").mkdir(parents=True, exist_ok=True)
     subprocess.run(
         [executable, "--vanilla", str(PACKAGE / "staffing_sensitivity.R"),
          str(output / "tickets.csv"), str(output / "staffing.csv"),
          str(output / "sensitivity.csv")],
-        check=True,
+        cwd=ROOT, env=os.environ | {"TMPDIR": "runtime/tmp"}, check=True,
     )
     with (output / "sensitivity.csv").open(encoding="utf-8", newline="") as stream:
         rows = []
@@ -181,11 +192,11 @@ def build(csv_path, output, rscript, settings):
         write_csv(work / "tickets.csv", TICKET_COLUMNS, tickets)
         write_csv(work / "weekly.csv", WEEKLY_COLUMNS, weekly)
         write_csv(work / "staffing.csv", STAFFING_COLUMNS, staffing)
-        sensitivity, sensitivity_status = run_sensitivity(work, staffing, rscript)
+        sensitivity, sensitivity_status = run_sensitivity(work, staffing, weekly, rscript)
         if not (work / "sensitivity.csv").exists():
             write_csv(work / "sensitivity.csv", SENSITIVITY_COLUMNS, [])
 
-        with sqlite3.connect(database) as connection:
+        with closing(sqlite3.connect(database)) as connection, connection:
             publish_reporting_tables(connection, weekly, staffing, sensitivity)
         report = {
             "weekly": weekly,
@@ -307,7 +318,7 @@ def main():
                 http.serve_forever()
     except KeyboardInterrupt:
         return
-    except (ValueError, KeyError, TypeError, OSError, sqlite3.Error, subprocess.CalledProcessError) as error:
+    except (ValueError, KeyError, TypeError, OSError, sqlite3.Error, csv.Error, subprocess.CalledProcessError) as error:
         parser.exit(1, f"{error}\n")
 
 

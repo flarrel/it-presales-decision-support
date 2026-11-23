@@ -1,0 +1,22 @@
+#!/bin/sh
+set -eu
+root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+state="$root/runtime/metabase"
+local_java="$root/runtime/java25/Contents/Home/bin/java"
+java_bin=${JAVA_BIN:-java}
+if [ -z "${JAVA_BIN:-}" ] && [ -x "$local_java" ]; then
+    java_bin="$local_java"
+fi
+jar=${METABASE_JAR:-"$root/runtime/metabase.jar"}
+if [ ! -f "$jar" ]; then
+    printf '%s\n' "Place the Metabase OSS JAR at $jar or set METABASE_JAR." >&2
+    exit 1
+fi
+mkdir -p "$state/tmp"
+export MB_JETTY_HOST=127.0.0.1
+export MB_JETTY_PORT=${MB_JETTY_PORT:-3000}
+export MB_DB_FILE="$state/app"
+export MB_PLUGINS_DIR="$state/plugins"
+export MB_ANON_TRACKING_ENABLED=false
+export MB_CHECK_FOR_UPDATES=false
+exec "$java_bin" --add-opens=java.base/java.nio=ALL-UNNAMED "-Duser.home=$state" "-Djava.io.tmpdir=$state/tmp" -Xmx1g -jar "$jar"
