@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Service desk planning</title>
+  <link rel="stylesheet" href="/styles.css">
+  <script type="module" src="/app.js"></script>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="top">
+    <div class="shell top-inner">
+      <a class="brand" href="#main">Service desk planning</a>
+      <nav aria-label="Report sections">
+        <a href="#history">Workload</a>
+        <a href="#forecast">Forecast</a>
+        <a href="#staffing">Staffing</a>
+        <a href="#data">Data</a>
+      </nav>
+    </div>
+  </header>
+  <main class="shell" id="main">
+    <header class="intro">
+      <div>
+        <h1>Service desk overview</h1>
+        <p id="data-context">Loading report…</p>
+      </div>
+      <a id="weekly-export" class="button secondary" hidden>Download weekly CSV</a>
+    </header>
+    <p class="error" id="report-error" role="alert" hidden></p>
+    <noscript><p>This dashboard requires JavaScript.</p></noscript>
+    <div id="report" hidden>
+      <form class="filters" id="filters">
+        <label>Queue <select id="queue" name="queue"><option value="">All queues</option></select></label>
+        <label>From week <select id="from" name="from"></select></label>
+        <label>Through week <select id="through" name="through"></select></label>
+        <button type="reset" class="button secondary">Reset</button>
+      </form>
+      <p class="error" id="filter-error" role="alert" hidden></p>
+
+      <section id="history" aria-labelledby="history-title">
+        <div class="section-heading">
+          <h2 id="history-title">Historical workload</h2>
+          <p>Totals reflect the selected queues and weeks.</p>
+        </div>
+        <div id="summary" class="kpis" aria-live="polite"></div>
+        <div class="grid charts">
+          <article class="panel">
+            <h3>Incoming tickets</h3>
+            <p>Tickets opened per week</p>
+            <div class="plot"><canvas id="volume-chart" aria-label="Weekly incoming tickets" role="img"></canvas></div>
+          </article>
+          <article class="panel">
+            <h3>SLA breaches</h3>
+            <p>Share of resolved tickets that breached SLA</p>
+            <div class="plot"><canvas id="sla-chart" aria-label="Weekly SLA breach rate" role="img"></canvas></div>
+          </article>
+        </div>
+        <details class="panel data-details" open>
+          <summary>Weekly metrics</summary>
+          <div id="weekly-table"></div>
+        </details>
+        <details class="panel data-details" id="ticket-details">
+          <summary>Ticket drill-down</summary>
+          <p id="ticket-context" aria-live="polite"></p>
+          <button class="table-action" id="clear-drill" type="button" hidden>Show all tickets in filter</button>
+          <div id="ticket-table"></div>
+          <div class="pagination">
+            <button class="button secondary" id="tickets-prev" type="button">Previous</button>
+            <span id="ticket-page" aria-live="polite"></span>
+            <button class="button secondary" id="tickets-next" type="button">Next</button>
+          </div>
+        </details>
+      </section>
+
+      <section id="forecast" aria-labelledby="forecast-title">
+        <div class="section-heading">
+          <h2 id="forecast-title">Demand forecast</h2>
+          <p id="forecast-context"></p>
+        </div>
+        <div class="grid forecast-grid">
+          <article class="panel">
+            <h3>Actuals and forecast</h3>
+            <p>Tickets opened per week</p>
+            <div class="plot"><canvas id="forecast-chart" aria-label="Weekly actual ticket volume and forecast" role="img"></canvas></div>
+            <div class="legend"><span class="actual">Actuals</span><span class="projected">Forecast</span></div>
+          </article>
+          <article class="panel">
+            <h3>Holdout accuracy</h3>
+            <p>Mean absolute error in tickets. Lower is better.</p>
+            <div id="forecast-metrics"></div>
+          </article>
+        </div>
+        <details class="panel data-details">
+          <summary>Forecast values and backtest</summary>
+          <div id="forecast-data"></div>
+        </details>
+      </section>
+
+      <section id="staffing" aria-labelledby="staffing-title">
+        <div class="section-heading">
+          <h2 id="staffing-title">Staffing recommendations</h2>
+          <p>Plans apply to all queues. Costs use scenario units.</p>
+        </div>
+        <div id="scenarios" class="grid scenarios"></div>
+        <article class="panel sensitivity">
+          <h3>Handling-time sensitivity</h3>
+          <p>Estimated staffing needs at different handling times.</p>
+          <div id="sensitivity"></div>
+        </article>
+      </section>
+
+      <section id="data" aria-labelledby="data-title">
+        <div class="section-heading">
+          <h2 id="data-title">Data checks and exports</h2>
+          <p>Import checks apply to the complete dataset.</p>
+        </div>
+        <div class="grid">
+          <article class="panel">
+            <h3>Import validation</h3>
+            <p id="validation-summary"></p>
+            <div id="validation"></div>
+          </article>
+          <article class="panel">
+            <h3>Exports</h3>
+            <ul class="exports" id="exports"></ul>
+          </article>
+        </div>
+      </section>
+    </div>
+  </main>
+</body>
+</html>
